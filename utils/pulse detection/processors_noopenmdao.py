@@ -178,20 +178,31 @@ class findFaceGetPulse(object):
         if L > self.buffer_size:
             self.times = self.times[-self.buffer_size:]
             L = self.buffer_size
+            print('** ', self.times, -self.buffer_size)
 
         processed = np.array(self.data_buffer)
         self.samples = processed
         if L > 10:
             self.output_dim = processed.shape[0]
+            print('0 ', processed.shape[0])
+            
+            print('(self.times[-1] - self.times[0]) ', (self.times[-1] - self.times[0]))
+            print('self.times', self.times)
 
-            self.fps = float(L) / (self.times[-1] - self.times[0])
+#             self.fps = float(L) / ((self.times[-1] - self.times[0]))
+            self.fps = 8.
             even_times = np.linspace(self.times[0], self.times[-1], L)
             interpolated = np.interp(even_times, self.times, processed)
+            print('1 ', interpolated)
+            
             interpolated = np.hamming(L) * interpolated
             interpolated = interpolated - np.mean(interpolated)
             raw = np.fft.rfft(interpolated)
+            print('2 ', interpolated)
+            print('3 ', raw)
             phase = np.angle(raw)
             self.fft = np.abs(raw)
+            print('self.fps ',  self.fps)
             self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
 
             freqs = 60. * self.freqs
@@ -199,14 +210,14 @@ class findFaceGetPulse(object):
 
             
 #             print('phase ',  phase)
-#             print('idx ',  idx)
+            print('idx ',  idx)
 #             print('raw ',  raw)
-#             print('self.fft ',  self.fft)
+            print('self.freqs ',  self.freqs)
             print('freqs ',  freqs)
 #             idx = idx -1) 
             filter_arr = []
     
-            print('dd ', idx, idx[0])
+#             print('dd ', idx, idx[0])
             idx = idx[0]
 
             # go through each element in arr
