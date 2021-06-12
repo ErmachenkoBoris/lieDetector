@@ -22,9 +22,10 @@ class BaseModel(ABC):
             print(latest)
             checkpoint = self.model.load_weights(latest)
             self.epoch = self._get_epoch_from_name(latest)
-            return checkpoint
+            return checkpoint, self.epoch
         else:
             logging.debug("There is no checkpoint :(")
+            return None, 0
 
     @staticmethod
     def _get_epoch_from_name(checkpoint_name):

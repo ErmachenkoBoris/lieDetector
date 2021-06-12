@@ -1,9 +1,11 @@
 from enum import Enum
 
+from configs.local_config import PRETRAINED_MODELS
+
 
 class FeatureExtractorConfig:
-    def __init__(self, output_shape):
-        self.output_shape = output_shape
+    def __init__(self, pretrained_path=""):
+        self.pretrained_path = pretrained_path
 
 
 class AudioFeatureExtractor(Enum):
@@ -16,7 +18,7 @@ class AudioFeatureExtractor(Enum):
     def __init__(self, config):
         self.config = config
 
-    L3 = FeatureExtractorConfig(output_shape=(10, 32, 24, 512))
+    L3 = FeatureExtractorConfig(pretrained_path="D:/2021/hse/lie-detector/lieDetector/models/l3.h5")
 
 
 class VideoFeatureExtractor(Enum):
@@ -29,6 +31,6 @@ class VideoFeatureExtractor(Enum):
     def __init__(self, config):
         self.config = config
 
-    VGG = FeatureExtractorConfig(output_shape=())
-    VGG_FACE = FeatureExtractorConfig(output_shape=())
-    PULSE = FeatureExtractorConfig(output_shape=(741, 2))
+    VGG = FeatureExtractorConfig()
+    VGG_FACE = FeatureExtractorConfig()
+    PULSE = FeatureExtractorConfig()

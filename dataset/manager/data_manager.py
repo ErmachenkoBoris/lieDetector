@@ -85,6 +85,7 @@ class DataManager:
 
         opensmile_compare_2016_features = example[DatasetFeaturesSet.OPENSMILE_ComParE_2016.name]
         opensmile_compare_2016_features = tf.io.parse_tensor(opensmile_compare_2016_features, tf.float32)
+        opensmile_compare_2016_features = tf.squeeze(opensmile_compare_2016_features)
         opensmile_compare_2016_features = tf.cast(opensmile_compare_2016_features, tf.float32)
 
         audio_features = example[DatasetFeaturesSet.AUDIO.name]
@@ -102,12 +103,13 @@ class DataManager:
         pulse_features = example[DatasetFeaturesSet.PULSE.name]
         pulse_features = tf.io.parse_tensor(pulse_features, tf.float32)
         pulse_features = tf.cast(pulse_features, tf.float32)
+        pulse_features = tf.expand_dims(pulse_features, -1)
 
         video_scene_r2plus1_features = example[DatasetFeaturesSet.VIDEO_SCENE_R2PLUS1_FEATURES.name]
         video_scene_r2plus1_features = tf.io.parse_tensor(video_scene_r2plus1_features, tf.float32)
         video_scene_r2plus1_features = tf.cast(video_scene_r2plus1_features, tf.float32)
 
-        clazz = tf.io.parse_tensor(example[DatasetFeaturesSet.CLASS.name], tf.double)
+        clazz = tf.io.parse_tensor(example[DatasetFeaturesSet.CLASS.name], tf.float32)
         clazz = tf.cast(clazz, dtype=tf.float32)
         clazz = tf.ensure_shape(clazz, 1)
 

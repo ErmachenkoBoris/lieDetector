@@ -24,6 +24,7 @@ def main():
         first_layer=128,
         second_layer=64,
         learning_rate=0.001,
+        pretrained_model_path=DatasetFeaturesSet.AUDIO.config.extractor.config.pretrained_path,
         cp_dir=config.CHECKPOINT_DIR,
         cp_name=config.CHECKPOINT_NAME
     )

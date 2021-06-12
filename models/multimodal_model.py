@@ -21,13 +21,12 @@ class MultimodalModel(BaseModel):
                  cp_name: str,
                  fusion_type='sum',
                  dropout=0.1,
-                 pretrained_model_path: str = "",
                  log_and_save_freq_batch: int = 100,
                  learning_rate: float = 0.001,
                  trained: bool = False):
 
         self._modalities_list = modalities_list
-        self._modality_to_extractor = self._prepare_modality_extractors(modalities_list, pretrained_model_path)
+        self._modality_to_extractor = self._prepare_modality_extractors(modalities_list)
         self._learning_rate = learning_rate
 
         self._optimizer = tf.keras.optimizers.Adam
@@ -117,8 +116,13 @@ class MultimodalModel(BaseModel):
         result = {}
         for modality in modalities_list:
             if modality.config.extractor == AudioFeatureExtractor.L3:
-                result[modality] = tf.keras.models.load_model(pretrained_model_path, custom_objects={
-                    'Melspectrogram': Melspectrogram}, compile=False)
+                model = tf.keras.models.load_model(pretrained_model_path,
+                                                   custom_objects={
+                                                       'Melspectrogram': Melspectrogram},
+                                                   compile=False)
+                output = model.get_layer('activation_7').output
+                output = tf.keras.layers.GlobalAveragePooling2D()(output)
+                result[modality].trainable = tf.keras.Model(inputs=model.input, outputs=output)
                 result[modality].trainable = False
             elif modality.config.extractor == VideoFeatureExtractor.VGG:
                 result[modality] = tf.keras.applications.VGG16(include_top=False, weights='imagenet',

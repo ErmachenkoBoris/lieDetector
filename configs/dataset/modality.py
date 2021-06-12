@@ -90,10 +90,10 @@ class DatasetFeaturesSet(Enum):
         self.encoder = encoder
         self.config = config
 
-    OPENSMILE_ComParE_2016 = TensorEncoder(), FeaturesSetConfig(shape=(10, 6373), extractor=None)
+    OPENSMILE_ComParE_2016 = TensorEncoder(), FeaturesSetConfig(shape=(30, 6373), extractor=None)
     AUDIO = TensorEncoder(), FeaturesSetConfig(shape=(30, 1, 48000), extractor=AudioFeatureExtractor.L3)
     VIDEO_FACE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG_FACE)
     VIDEO_SCENE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG)
-    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(741, 2), extractor=VideoFeatureExtractor.PULSE)
+    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(741, 2, 1), extractor=VideoFeatureExtractor.PULSE)
     CLASS = TensorEncoder(), FeaturesSetConfig(shape=1, extractor=None)
     VIDEO_SCENE_R2PLUS1_FEATURES = TensorEncoder(), FeaturesSetConfig(shape=(113, 512), extractor=None)

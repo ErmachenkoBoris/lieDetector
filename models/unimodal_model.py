@@ -5,6 +5,7 @@ from base.base_model import BaseModel
 import tensorflow as tf
 
 from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
+from models.layers.features.extract_features_batch import ExtractTensorFeatures
 
 
 class UnimodalModel(BaseModel):
@@ -29,10 +30,13 @@ class UnimodalModel(BaseModel):
             print("Init model with trained features extractor... (WARN: extractor must be non null)")
 
             if self._modality.config.extractor == AudioFeatureExtractor.L3:
-                self._pretrained_feature_extractor = tf.keras.models.load_model(pretrained_model_path,
-                                                                                custom_objects={
-                                                                                    'Melspectrogram': Melspectrogram},
-                                                                                compile=False)
+                model = tf.keras.models.load_model(pretrained_model_path,
+                                                   custom_objects={
+                                                       'Melspectrogram': Melspectrogram},
+                                                   compile=False)
+                output = model.get_layer('activation_7').output
+                output = tf.keras.layers.GlobalAveragePooling2D()(output)
+                self._pretrained_feature_extractor = tf.keras.Model(inputs=model.input, outputs=output)
                 self._pretrained_feature_extractor.trainable = False
             elif self._modality.config.extractor == VideoFeatureExtractor.VGG:
                 self._pretrained_feature_extractor = tf.keras.applications.VGG16(include_top=False, weights='imagenet',
@@ -69,17 +73,16 @@ class UnimodalModel(BaseModel):
     def _build_model(self):
         input_tensor = tf.keras.layers.Input(shape=self._input_shape)
         if self._modality.config.extractor is not None and self._modality.config.extractor != VideoFeatureExtractor.PULSE:
-            for layer in self._pretrained_feature_extractor.layers[-self._num_fine_tuned_layers:]:
-                if not isinstance(layer, tf.keras.layers.BatchNormalization):
-                    layer.trainable = True
-            # (None, 480, 224, 224, 3)
-            x = tf.map_fn(lambda frame_data: self._pretrained_feature_extractor(frame_data), input_tensor)
+            #  Будет ли это обучаться? - Нет, для точной настройки нужно обучать отдельно :(
+            x = ExtractTensorFeatures(self._pretrained_feature_extractor)(input_tensor)
+            # WARN hardcode here
+            if tf.shape(x).shape[0] == 5:
+                x = tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(x)
         elif self._modality.config.extractor is not None and self._modality.config.extractor == VideoFeatureExtractor.PULSE:
             x = self.pulse_conv_net(input_tensor)
         else:
             x = input_tensor
 
-        print(x.shape)
         x = self.apply_lstm(x)
         x = tf.keras.layers.Dense(units=self._fc_units, activation=self._activation)(x)
         output_tensor = tf.keras.layers.Dense(units=1, activation='sigmoid')(x)
@@ -89,7 +92,8 @@ class UnimodalModel(BaseModel):
         return model, model
 
     def get_train_model(self):
-        metrics = ['accuracy', 'recall', 'precision', 'f1']
+        metrics = [tf.keras.metrics.Accuracy(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall(),
+                   tf.keras.metrics.AUC()]
         self.train_model.compile(
             optimizer=self._optimizer(learning_rate=self._learning_rate),
             loss=tf.keras.losses.BinaryCrossentropy(),
@@ -111,4 +115,5 @@ class UnimodalModel(BaseModel):
                                    strides=(2, 1),
                                    activation=self._activation)(input_tensor)
         x = tf.keras.layers.MaxPool2D(pool_size=(2, 1))(x)
+        x = tf.keras.layers.Reshape((x.shape[1], 16))(x)
         return x

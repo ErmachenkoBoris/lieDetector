@@ -8,7 +8,5 @@ CHECKPOINT_NAME = "cp-{epoch:04d}.ckpt"
 TENSORBOARD_DIR = "../experiments/" + EXP_NAME + "/tb"
 TENSORBOARD_NAME = 'epoch-{}'
 
-DATASET_PATH = "E:/RAMAS/RAMAS"
-
-PRETRAINED_MODELS = "../models/pretrained/"
+PRETRAINED_MODELS = "D:/2021/hse/lie-detector/lieDetector/models/pretrained"
 LOG_AND_SAVE_FREQ_BATCH = 10
