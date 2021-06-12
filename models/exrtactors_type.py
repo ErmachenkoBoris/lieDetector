@@ -1,6 +1,6 @@
 from enum import Enum
 
-from configs.local_config import PRETRAINED_MODELS
+from configs.colab_config import PRETRAINED_MODELS
 
 
 class FeatureExtractorConfig:
