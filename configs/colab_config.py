@@ -10,6 +10,5 @@ CHECKPOINT_NAME = "cp-{epoch:04d}.ckpt"
 TENSORBOARD_DIR = DATASET_PATH + "/experiments/" + EXP_NAME + "/tb"
 TENSORBOARD_NAME = 'epoch-{}'
 
-
-PRETRAINED_MODELS = "/content/drive/MyDrive/models/pretrained/"
+PRETRAINED_MODELS = "/content/drive/MyDrive/pretrained"
 LOG_AND_SAVE_FREQ_BATCH = 10
