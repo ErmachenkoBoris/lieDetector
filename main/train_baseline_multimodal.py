@@ -37,7 +37,7 @@ def main():
                 first_layer=128,
                 second_layer=64,
                 learning_rate=0.0001,
-                cp_dir=config.CHECKPOINT_DIR,
+                cp_dir=config.CHECKPOINT_DIR + "/" + fusion + "_" + modalities[i].name,
                 cp_name=config.CHECKPOINT_NAME
             )
 
@@ -47,7 +47,7 @@ def main():
                 dataset_processor=processor,
                 model=model,
                 data=data_manager,
-                board_path=config.TENSORBOARD_DIR,
+                board_path=config.TENSORBOARD_DIR + "/" + fusion + "_" + modalities[i].name,
                 log_freq=config.LOG_AND_SAVE_FREQ_BATCH,
                 num_epochs=2,
                 initial_epoch=epoch,
