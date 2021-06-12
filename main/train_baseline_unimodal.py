@@ -12,38 +12,45 @@ import configs.local_config as config
 
 
 def main():
-    processor = MultimodalDatasetFeaturesProcessor(modalities_list=[DatasetFeaturesSet.AUDIO])
+    modalities = [DatasetFeaturesSet.AUDIO,
+                  DatasetFeaturesSet.VIDEO_FACE,
+                  DatasetFeaturesSet.VIDEO_SCENE,
+                  DatasetFeaturesSet.PULSE,
+                  DatasetFeaturesSet.VIDEO_SCENE_R2PLUS1_FEATURES]
 
-    data_manager = DataManager(
-        tf_record_path=config.DATASET_TF_RECORDS_PATH,
-        batch_size=1)
+    for modality in modalities:
+        processor = MultimodalDatasetFeaturesProcessor(modalities_list=[modality])
 
-    model = UnimodalModel(
-        modality=DatasetFeaturesSet.AUDIO,
-        fc_units=64,
-        first_layer=128,
-        second_layer=64,
-        learning_rate=0.001,
-        pretrained_model_path=DatasetFeaturesSet.AUDIO.config.extractor.config.pretrained_path,
-        cp_dir=config.CHECKPOINT_DIR,
-        cp_name=config.CHECKPOINT_NAME
-    )
+        data_manager = DataManager(
+            tf_record_path=config.DATASET_TF_RECORDS_PATH,
+            batch_size=1)
 
-    _, epoch = model.load()
+        model = UnimodalModel(
+            modality=modality,
+            fc_units=64,
+            first_layer=128,
+            second_layer=64,
+            learning_rate=0.001,
+            pretrained_model_path=modality.config.extractor.config.pretrained_path if modality.config.extractor is not None else None,
+            cp_dir=config.CHECKPOINT_DIR,
+            cp_name=config.CHECKPOINT_NAME
+        )
 
-    trainer = SimpleTrainer(
-        dataset_processor=processor,
-        model=model,
-        data=data_manager,
-        board_path=config.TENSORBOARD_DIR,
-        log_freq=config.LOG_AND_SAVE_FREQ_BATCH,
-        num_epochs=2,
-        initial_epoch=epoch,
-        create_dirs_flag=True
-    )
+        _, epoch = model.load()
 
-    metrics = trainer.train()
-    print(metrics)
+        trainer = SimpleTrainer(
+            dataset_processor=processor,
+            model=model,
+            data=data_manager,
+            board_path=config.TENSORBOARD_DIR,
+            log_freq=config.LOG_AND_SAVE_FREQ_BATCH,
+            num_epochs=2,
+            initial_epoch=epoch,
+            create_dirs_flag=True
+        )
+
+        metrics = trainer.train()
+        print(metrics)
 
 
 if __name__ == "__main__":
