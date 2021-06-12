@@ -12,7 +12,6 @@ class MultimodalDatasetFeaturesProcessor(BaseDatasetProcessor):
     def pre_process(self, dataset: tf.data.Dataset, parallel_calls: int):
         dataset = dataset.map(self._extract_specified_modalities_and_ensure_shape, num_parallel_calls=parallel_calls)
         dataset = dataset.map(self.concat_with_labels, num_parallel_calls=parallel_calls)
-        dataset = dataset.filter(self.filter_nan)
         return dataset
 
     @tf.function

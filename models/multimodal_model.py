@@ -5,6 +5,7 @@ from base.base_model import BaseModel
 import tensorflow as tf
 
 from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
+from models.layers.features.extract_features_batch import ExtractTensorFeatures
 from models.layers.fusion.concatenation_fusion_layer import ConcatenationFusionLayer
 from models.layers.fusion.fbr_fusion_layer import FactorizedPoolingFusionLayer
 from models.layers.fusion.sum_fusion_layer import SumFusionLayer
@@ -57,7 +58,9 @@ class MultimodalModel(BaseModel):
         inputs = self._build_multimodal_input()
         intra_modality_features = self._extract_modalities_features(inputs)
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
+        print(intra_modality_outputs.shape)
         fusion_output = SumFusionLayer()(intra_modality_outputs)
+        print(fusion_output.shape)
         output_tensor = self._build_classification_layer(fusion_output)
 
         model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
@@ -88,7 +91,8 @@ class MultimodalModel(BaseModel):
         return model, model
 
     def get_train_model(self):
-        metrics = ['accuracy', 'recall', 'precision', 'f1']
+        metrics = [tf.keras.metrics.Accuracy(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall(),
+                   tf.keras.metrics.AUC()]
         self.train_model.compile(
             optimizer=self._optimizer(learning_rate=self._learning_rate),
             loss=tf.keras.losses.BinaryCrossentropy(),
@@ -110,19 +114,20 @@ class MultimodalModel(BaseModel):
                                    strides=(2, 1),
                                    activation=self._activation)(input_tensor)
         x = tf.keras.layers.MaxPool2D(pool_size=(2, 1))(x)
+        x = tf.keras.layers.Reshape((x.shape[1], 16))(x)
         return x
 
-    def _prepare_modality_extractors(self, modalities_list, pretrained_model_path):
+    def _prepare_modality_extractors(self, modalities_list):
         result = {}
         for modality in modalities_list:
             if modality.config.extractor == AudioFeatureExtractor.L3:
-                model = tf.keras.models.load_model(pretrained_model_path,
+                model = tf.keras.models.load_model(modality.config.extractor.config.pretrained_path,
                                                    custom_objects={
                                                        'Melspectrogram': Melspectrogram},
                                                    compile=False)
                 output = model.get_layer('activation_7').output
                 output = tf.keras.layers.GlobalAveragePooling2D()(output)
-                result[modality].trainable = tf.keras.Model(inputs=model.input, outputs=output)
+                result[modality] = tf.keras.Model(inputs=model.input, outputs=output)
                 result[modality].trainable = False
             elif modality.config.extractor == VideoFeatureExtractor.VGG:
                 result[modality] = tf.keras.applications.VGG16(include_top=False, weights='imagenet',
@@ -151,7 +156,10 @@ class MultimodalModel(BaseModel):
 
     def _extract_modality_features(self, modality, input_):
         if modality.config.extractor is not None and modality.config.extractor != VideoFeatureExtractor.PULSE:
-            x = tf.map_fn(lambda frame_data: self._modality_to_extractor[modality](frame_data), input_)
+            x = ExtractTensorFeatures(self._modality_to_extractor[modality])(input_)
+            # WARN hardcode here
+            if tf.shape(x).shape[0] == 5:
+                x = tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(x)
         elif modality.config.extractor is not None and modality.config.extractor == VideoFeatureExtractor.PULSE:
             # need to pretrain & freeze
             x = self.pulse_conv_net(input_)
@@ -160,9 +168,8 @@ class MultimodalModel(BaseModel):
         return x
 
     def _build_LSTM_block(self, inputs):
-        intra_modality_outputs = self.apply_lstm(inputs[0])
-        for i in range(1, len(inputs)):
-            output = self.apply_lstm(inputs[i])
-            intra_modality_outputs = tf.concat([intra_modality_outputs, output], axis=1)
+        outputs = []
+        for i in range(0, len(inputs)):
+            outputs.append(self.apply_lstm(inputs[i]))
 
-        return intra_modality_outputs
+        return tf.stack(outputs, axis=1)

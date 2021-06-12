@@ -18,7 +18,7 @@ class AudioFeatureExtractor(Enum):
     def __init__(self, config):
         self.config = config
 
-    L3 = FeatureExtractorConfig(pretrained_path=PRETRAINED_MODELS + "/openl3_audio_mel256_env.h5")
+    L3 = FeatureExtractorConfig(pretrained_path="D:/2021/hse/lie-detector/lieDetector/models/l3.h5")
 
 
 class VideoFeatureExtractor(Enum):
