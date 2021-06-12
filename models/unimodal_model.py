@@ -73,7 +73,10 @@ class UnimodalModel(BaseModel):
     def _build_model(self):
         input_tensor = tf.keras.layers.Input(shape=self._input_shape)
         if self._modality.config.extractor is not None and self._modality.config.extractor != VideoFeatureExtractor.PULSE:
-            #  Будет ли это обучаться? - Нет, для точной настройки нужно обучать отдельно :(
+            for layer in self._pretrained_feature_extractor.layers[-self._num_fine_tuned_layers:]:
+                if not isinstance(layer, tf.keras.layers.BatchNormalization):
+                    layer.trainable = True
+            #  Будет ли это обучаться?
             x = ExtractTensorFeatures(self._pretrained_feature_extractor)(input_tensor)
             # WARN hardcode here
             if tf.shape(x).shape[0] == 5:
