@@ -10,11 +10,6 @@ class MultimodalDatasetFeaturesProcessor(BaseDatasetProcessor):
         self._modalities_list = modalities_list
 
     def pre_process(self, dataset: tf.data.Dataset, parallel_calls: int):
-        if DatasetFeaturesSet.SHIMMERS in self._modalities_list:
-            dataset = dataset.filter(self.is_shape_exists)
-        if DatasetFeaturesSet.SKELETON in self._modalities_list:
-            dataset = dataset.filter(self.is_shape_skeleton_exists)
-
         dataset = dataset.map(self._extract_specified_modalities_and_ensure_shape, num_parallel_calls=parallel_calls)
         dataset = dataset.map(self.concat_with_labels, num_parallel_calls=parallel_calls)
         return dataset

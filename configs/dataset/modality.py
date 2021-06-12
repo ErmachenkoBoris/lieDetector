@@ -2,22 +2,41 @@ from enum import Enum
 import tensorflow as tf
 from abc import ABC
 
+from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
+
 
 class TimeDependentModality(ABC):
     WINDOW_STEP_IN_SECS = 1
-    WINDOW_WIDTH_IN_SECS = 15
+    WINDOW_WIDTH_IN_SECS = 5
 
 
 class VideoModalityConfig(TimeDependentModality):
     def __init__(self):
         super().__init__()
-        self.EXTRACTED_FRAMES_COUNT = 64
+        self.FRAMES_PERIOD = 5
+        self.SHAPE = 224
+        self.FPS = 32
+        self.FILE_EXT = '.mp4'
+
+
+class PulseConfig(TimeDependentModality):
+    def __init__(self):
+        super().__init__()
+        self.FPS = 50
+        self.SHAPE = 224
+        self.FILE_EXT = '.mp4'
+
+
+class VideoSceneModalityConfig(VideoModalityConfig):
+    def __init__(self):
+        super().__init__()
         self.FILE_EXT = '.mp4'
 
 
 class AudioModalityConfig(TimeDependentModality):
     def __init__(self):
         super().__init__()
+        self.SR = 48000
         self.FILE_EXT = '.wav'
 
 
@@ -33,9 +52,8 @@ class Modality(Enum):
 
     AUDIO = AudioModalityConfig()
     VIDEO_FACE = VideoModalityConfig()
-    VIDEO_SCENE = VideoModalityConfig()
-    SHIMMERS = TimeDependentModality()
-    KINECT_SKELETON = TimeDependentModality()
+    VIDEO_SCENE = VideoSceneModalityConfig()
+    PULSE = PulseConfig()
 
 
 class ByteEncoder:
@@ -54,21 +72,28 @@ class TensorEncoder(ByteEncoder):
         return super().transform(feature)
 
 
-class DatasetFeature(Enum):
+class FeaturesSetConfig:
+    def __init__(self, shape, extractor, input_shape=None):
+        self.shape = shape
+        self.extractor = extractor
+        self.input_shape = input_shape if input_shape is not None else shape
+
+
+class DatasetFeaturesSet(Enum):
     def __new__(cls, *args, **kwds):
         value = len(cls.__members__) + 1
         obj = object.__new__(cls)
         obj._value_ = value
         return obj
 
-    def __init__(self, encoder):
+    def __init__(self, encoder, config):
         self.encoder = encoder
+        self.config = config
 
-    L3 = TensorEncoder()
-    OPENSMILE_GeMAPSv01b = TensorEncoder()
-    OPENSMILE_eGeMAPSv02 = TensorEncoder()
-    OPENSMILE_ComParE_2016 = TensorEncoder()
-    VIDEO_SCENE_RAW = TensorEncoder()
-    VIDEO_SHAPE = TensorEncoder()
-    VIDEO_FACE_RAW = TensorEncoder()
-    CLASS = TensorEncoder()
+    OPENSMILE_ComParE_2016 = TensorEncoder(), FeaturesSetConfig(shape=(10, 6373), extractor=None)
+    AUDIO = TensorEncoder(), FeaturesSetConfig(shape=(30, 1, 48000), extractor=AudioFeatureExtractor.L3)
+    VIDEO_FACE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG_FACE)
+    VIDEO_SCENE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG)
+    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(741, 2), extractor=VideoFeatureExtractor.PULSE)
+    CLASS = TensorEncoder(), FeaturesSetConfig(shape=1, extractor=None)
+    VIDEO_SCENE_R2PLUS1_FEATURES = TensorEncoder(), FeaturesSetConfig(shape=(113, 512), extractor=None)

@@ -8,14 +8,12 @@ from abc import ABC, abstractmethod
 class BaseModel(ABC):
     """ Базовый класс, описывающий модель машинного обучения """
 
-    def __init__(self, cp_dir: str, cp_name: str, save_freq: int, model, iter_per_epoch: int):
+    def __init__(self, cp_dir: str, cp_name: str, save_freq: int, model):
         self._cp_dir = cp_dir
         self._cp_name = cp_name
         self._save_freq = save_freq
         self.model = model
         self.epoch = 0
-        self.iteration = 0
-        self._iter_per_epoch: int = iter_per_epoch
 
     def load(self):
         latest = tf.train.latest_checkpoint(self._cp_dir)
@@ -24,7 +22,6 @@ class BaseModel(ABC):
             print(latest)
             checkpoint = self.model.load_weights(latest)
             self.epoch = self._get_epoch_from_name(latest)
-            self.iteration = self.epoch * self._iter_per_epoch
             return checkpoint
         else:
             logging.debug("There is no checkpoint :(")
