@@ -26,7 +26,7 @@ class findFaceGetPulse(object):
         self.frame_out = np.zeros((10, 10))
         self.fps = 0
         self.buffer_size = 250
-        #self.window = np.hamming(self.buffer_size)
+        # self.window = np.hamming(self.buffer_size)
         self.data_buffer = []
         self.times = []
         self.ttimes = []
@@ -37,7 +37,7 @@ class findFaceGetPulse(object):
         self.t0 = time.time()
         self.bpms = []
         self.bpm = 0
-        dpath = resource_path("haarcascade_frontalface_alt.xml")
+        dpath = resource_path("/content/lieDetector/utils/pulse_detection/haarcascade_frontalface_alt.xml")
         if not os.path.exists(dpath):
             print("Cascade file not present!")
         self.face_cascade = cv2.CascadeClassifier(dpath)
@@ -128,9 +128,9 @@ class findFaceGetPulse(object):
                 (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             cv2.putText(
                 self.frame_out, "Press 'S' to lock face and begin",
-                       (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+                (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                       (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
+                        (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             self.data_buffer, self.times, self.trained = [], [], False
             detected = list(self.face_cascade.detectMultiScale(self.gray,
                                                                scaleFactor=1.3,
@@ -148,11 +148,11 @@ class findFaceGetPulse(object):
             self.draw_rect(self.face_rect, col=(255, 0, 0))
             x, y, w, h = self.face_rect
             cv2.putText(self.frame_out, "Face",
-                       (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                        (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
             self.draw_rect(forehead1)
             x, y, w, h = forehead1
             cv2.putText(self.frame_out, "Forehead",
-                       (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                        (x, y), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
             return
         if set(self.face_rect) == set([1, 1, 2, 2]):
             return
@@ -162,11 +162,11 @@ class findFaceGetPulse(object):
             (10, 25), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
         cv2.putText(
             self.frame_out, "Press 'S' to restart",
-                   (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+            (10, 50), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
         cv2.putText(self.frame_out, "Press 'D' to toggle data plot",
-                   (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                    (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
         cv2.putText(self.frame_out, "Press 'Esc' to quit",
-                   (10, 100), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
+                    (10, 100), cv2.FONT_HERSHEY_PLAIN, 1.5, col)
 
         forehead1 = self.get_subface_coord(0.5, 0.18, 0.25, 0.15)
         self.draw_rect(forehead1)
@@ -178,44 +178,54 @@ class findFaceGetPulse(object):
         if L > self.buffer_size:
             self.times = self.times[-self.buffer_size:]
             L = self.buffer_size
+            print('** ', self.times, -self.buffer_size)
 
         processed = np.array(self.data_buffer)
         self.samples = processed
         if L > 10:
             self.output_dim = processed.shape[0]
+            print('0 ', processed.shape[0])
 
-            self.fps = float(L) / (self.times[-1] - self.times[0])
+            print('(self.times[-1] - self.times[0]) ', (self.times[-1] - self.times[0]))
+            print('self.times', self.times)
+
+            #             self.fps = float(L) / ((self.times[-1] - self.times[0]))
+            self.fps = 8.
             even_times = np.linspace(self.times[0], self.times[-1], L)
             interpolated = np.interp(even_times, self.times, processed)
+            print('1 ', interpolated)
+
             interpolated = np.hamming(L) * interpolated
             interpolated = interpolated - np.mean(interpolated)
             raw = np.fft.rfft(interpolated)
+            print('2 ', interpolated)
+            print('3 ', raw)
             phase = np.angle(raw)
             self.fft = np.abs(raw)
+            print('self.fps ', self.fps)
             self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
 
             freqs = 60. * self.freqs
             idx = np.where((freqs > 50) & (freqs < 180))
 
-            
-#             print('phase ',  phase)
-#             print('idx ',  idx)
-#             print('raw ',  raw)
-#             print('self.fft ',  self.fft)
-            print('freqs ',  freqs)
-#             idx = idx -1) 
+            #             print('phase ',  phase)
+            print('idx ', idx)
+            #             print('raw ',  raw)
+            print('self.freqs ', self.freqs)
+            print('freqs ', freqs)
+            #             idx = idx -1)
             filter_arr = []
-    
-            print('dd ', idx, idx[0])
+
+            #             print('dd ', idx, idx[0])
             idx = idx[0]
 
             # go through each element in arr
             for element in idx:
-              # if the element is completely divisble by 2, set the value to True, otherwise False
-              if element<len(self.fft):
-                filter_arr.append(True)
-              else:
-                filter_arr.append(False)
+                # if the element is completely divisble by 2, set the value to True, otherwise False
+                if element < len(self.fft):
+                    filter_arr.append(True)
+                else:
+                    filter_arr.append(False)
 
             idx = idx[filter_arr]
             print('--1 ', idx)
@@ -257,4 +267,4 @@ class findFaceGetPulse(object):
                 text = "(estimate: %0.1f bpm)" % (self.bpm)
             tsize = 1
             cv2.putText(self.frame_out, text,
-                       (int(x - w / 2), int(y)), cv2.FONT_HERSHEY_PLAIN, tsize, col)
+                        (int(x - w / 2), int(y)), cv2.FONT_HERSHEY_PLAIN, tsize, col)
