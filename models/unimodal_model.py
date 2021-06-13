@@ -56,7 +56,7 @@ class UnimodalModel(BaseModel):
         return model, model
 
     def get_train_model(self):
-        metrics = [tf.keras.metrics.Accuracy(), tf.keras.metrics.Precision(), tf.keras.metrics.Recall(),
+        metrics = ['accuracy', tf.keras.metrics.Precision(), tf.keras.metrics.Recall(),
                    tf.keras.metrics.AUC()]
         self.train_model.compile(
             optimizer=self._optimizer(learning_rate=self._learning_rate),
