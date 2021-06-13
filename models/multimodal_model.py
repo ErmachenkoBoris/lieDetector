@@ -4,8 +4,6 @@ from keras_vggface import VGGFace
 from base.base_model import BaseModel
 import tensorflow as tf
 
-from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
-from models.layers.features.extract_features_batch import ExtractTensorFeatures
 from models.layers.fusion.concatenation_fusion_layer import ConcatenationFusionLayer
 from models.layers.fusion.fbr_fusion_layer import FactorizedPoolingFusionLayer
 from models.layers.fusion.sum_fusion_layer import SumFusionLayer
@@ -27,7 +25,6 @@ class MultimodalModel(BaseModel):
                  trained: bool = False):
 
         self._modalities_list = modalities_list
-        self._modality_to_extractor = self._prepare_modality_extractors(modalities_list)
         self._learning_rate = learning_rate
 
         self._optimizer = tf.keras.optimizers.Adam
@@ -55,38 +52,33 @@ class MultimodalModel(BaseModel):
             return self._build_fbp_fusion_model()
 
     def _build_sum_fusion_model(self):
-        inputs = self._build_multimodal_input()
-        intra_modality_features = self._extract_modalities_features(inputs)
+        intra_modality_features = self._build_multimodal_input()
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
-        print(intra_modality_outputs.shape)
         fusion_output = SumFusionLayer()(intra_modality_outputs)
-        print(fusion_output.shape)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
+        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
         model.summary()
         return model, model
 
     def _build_concatenation_fusion_model(self):
-        inputs = self._build_multimodal_input()
-        intra_modality_features = self._extract_modalities_features(inputs)
+        intra_modality_features = self._build_multimodal_input()
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = ConcatenationFusionLayer(self._lstm_units_second_layer, len(self._modalities_list))(
             intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
+        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
         model.summary()
         return model, model
 
     def _build_fbp_fusion_model(self):
-        inputs = self._build_multimodal_input()
-        intra_modality_features = self._extract_modalities_features(inputs)
+        intra_modality_features = self._build_multimodal_input()
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = FactorizedPoolingFusionLayer(self._dropout, self._pooling_size)(intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
+        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
         model.summary()
         return model, model
 
@@ -117,55 +109,12 @@ class MultimodalModel(BaseModel):
         x = tf.keras.layers.Reshape((x.shape[1], 16))(x)
         return x
 
-    def _prepare_modality_extractors(self, modalities_list):
-        result = {}
-        for modality in modalities_list:
-            if modality.config.extractor == AudioFeatureExtractor.L3:
-                model = tf.keras.models.load_model(modality.config.extractor.config.pretrained_path,
-                                                   custom_objects={
-                                                       'Melspectrogram': Melspectrogram},
-                                                   compile=False)
-                output = model.get_layer('activation_7').output
-                output = tf.keras.layers.GlobalAveragePooling2D()(output)
-                result[modality] = tf.keras.Model(inputs=model.input, outputs=output)
-                result[modality].trainable = False
-            elif modality.config.extractor == VideoFeatureExtractor.VGG:
-                result[modality] = tf.keras.applications.VGG16(include_top=False, weights='imagenet',
-                                                               input_shape=modality.config.input_shape[1:])
-                result[modality].trainable = False
-
-            elif modality.config.extractor == VideoFeatureExtractor.VGG_FACE:
-                result[modality] = VGGFace(include_top=False, weights='vggface',
-                                           input_shape=modality.config.input_shape[1:],
-                                           pooling='avg')
-                result[modality].trainable = False
-        return result
-
     def _build_multimodal_input(self):
         return [tf.keras.layers.Input(shape=modality.config.input_shape) for modality in self._modalities_list]
 
     def _build_classification_layer(self, features):
         x = tf.keras.layers.Dense(units=self._fc_units, activation=self._activation)(features)
         return tf.keras.layers.Dense(units=1, activation='sigmoid')(x)
-
-    def _extract_modalities_features(self, inputs):
-        features = []
-        for i, modality in enumerate(self._modalities_list):
-            features.append(self._extract_modality_features(modality, inputs[i]))
-        return features
-
-    def _extract_modality_features(self, modality, input_):
-        if modality.config.extractor is not None and modality.config.extractor != VideoFeatureExtractor.PULSE:
-            x = ExtractTensorFeatures(self._modality_to_extractor[modality])(input_)
-            # WARN hardcode here
-            if tf.shape(x).shape[0] == 5:
-                x = tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(x)
-        elif modality.config.extractor is not None and modality.config.extractor == VideoFeatureExtractor.PULSE:
-            # need to pretrain & freeze
-            x = self.pulse_conv_net(input_)
-        else:
-            x = input_
-        return x
 
     def _build_LSTM_block(self, inputs):
         outputs = []

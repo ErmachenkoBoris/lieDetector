@@ -1,11 +1,7 @@
-from kapre.time_frequency import Melspectrogram
-from keras_vggface import VGGFace
-
 from base.base_model import BaseModel
 import tensorflow as tf
 
-from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
-from models.layers.features.extract_features_batch import ExtractTensorFeatures
+from configs.dataset.modality import Modality
 
 
 class UnimodalModel(BaseModel):
@@ -18,38 +14,12 @@ class UnimodalModel(BaseModel):
                  cp_dir: str,
                  cp_name: str,
                  dropout=0.1,
-                 pretrained_model_path: str = "",
                  num_fine_tuned_layers: int = 2,
                  log_and_save_freq_batch: int = 100,
                  learning_rate: float = 0.001,
                  trained: bool = False):
 
         self._modality = modality
-
-        if self._modality.config.extractor is not None:
-            print("Init model with trained features extractor... (WARN: extractor must be non null)")
-
-            if self._modality.config.extractor == AudioFeatureExtractor.L3:
-                model = tf.keras.models.load_model(pretrained_model_path,
-                                                   custom_objects={
-                                                       'Melspectrogram': Melspectrogram},
-                                                   compile=False)
-                output = model.get_layer('activation_7').output
-                output = tf.keras.layers.GlobalAveragePooling2D()(output)
-                self._pretrained_feature_extractor = tf.keras.Model(inputs=model.input, outputs=output)
-                self._pretrained_feature_extractor.trainable = False
-            elif self._modality.config.extractor == VideoFeatureExtractor.VGG:
-                self._pretrained_feature_extractor = tf.keras.applications.VGG16(include_top=False, weights='imagenet',
-                                                                                 input_shape=self._modality.config.input_shape[
-                                                                                             1:])
-                self._pretrained_feature_extractor.trainable = False
-
-            elif self._modality.config.extractor == VideoFeatureExtractor.VGG_FACE:
-                self._pretrained_feature_extractor = VGGFace(include_top=False, weights='vggface',
-                                                             input_shape=self._modality.config.input_shape[1:],
-                                                             pooling='avg')
-                self._pretrained_feature_extractor.trainable = False
-
         self._num_fine_tuned_layers = num_fine_tuned_layers
         self._learning_rate = learning_rate
         self._dropout = dropout
@@ -72,16 +42,7 @@ class UnimodalModel(BaseModel):
 
     def _build_model(self):
         input_tensor = tf.keras.layers.Input(shape=self._input_shape)
-        if self._modality.config.extractor is not None and self._modality.config.extractor != VideoFeatureExtractor.PULSE:
-            for layer in self._pretrained_feature_extractor.layers[-self._num_fine_tuned_layers:]:
-                if not isinstance(layer, tf.keras.layers.BatchNormalization):
-                    layer.trainable = True
-            #  Будет ли это обучаться?
-            x = ExtractTensorFeatures(self._pretrained_feature_extractor)(input_tensor)
-            # WARN hardcode here
-            if tf.shape(x).shape[0] == 5:
-                x = tf.keras.layers.Reshape((x.shape[1], x.shape[2] * x.shape[3] * x.shape[4]))(x)
-        elif self._modality.config.extractor is not None and self._modality.config.extractor == VideoFeatureExtractor.PULSE:
+        if self._modality == Modality.PULSE:
             x = self.pulse_conv_net(input_tensor)
         else:
             x = input_tensor

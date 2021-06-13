@@ -2,8 +2,6 @@ from enum import Enum
 import tensorflow as tf
 from abc import ABC
 
-from models.exrtactors_type import AudioFeatureExtractor, VideoFeatureExtractor
-
 
 class TimeDependentModality(ABC):
     WINDOW_STEP_IN_SECS = 1
@@ -73,9 +71,8 @@ class TensorEncoder(ByteEncoder):
 
 
 class FeaturesSetConfig:
-    def __init__(self, shape, extractor, input_shape=None):
+    def __init__(self, shape, input_shape=None):
         self.shape = shape
-        self.extractor = extractor
         self.input_shape = input_shape if input_shape is not None else shape
 
 
@@ -90,10 +87,10 @@ class DatasetFeaturesSet(Enum):
         self.encoder = encoder
         self.config = config
 
-    OPENSMILE_ComParE_2016 = TensorEncoder(), FeaturesSetConfig(shape=(30, 6373), extractor=None)
-    AUDIO = TensorEncoder(), FeaturesSetConfig(shape=(30, 1, 48000), extractor=AudioFeatureExtractor.L3)
-    VIDEO_FACE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG_FACE)
-    VIDEO_SCENE = TensorEncoder(), FeaturesSetConfig(shape=(480, 224, 224, 3), extractor=VideoFeatureExtractor.VGG)
-    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(741, 2, 1), extractor=VideoFeatureExtractor.PULSE)
-    CLASS = TensorEncoder(), FeaturesSetConfig(shape=1, extractor=None)
-    VIDEO_SCENE_R2PLUS1_FEATURES = TensorEncoder(), FeaturesSetConfig(shape=(113, 512), extractor=None)
+    OPENSMILE_ComParE_2016 = TensorEncoder(), FeaturesSetConfig(shape=(20, 6373))
+    AUDIO = TensorEncoder(), FeaturesSetConfig(shape=(20, 512))
+    VIDEO_FACE = TensorEncoder(), FeaturesSetConfig(shape=(320, 512))
+    VIDEO_SCENE = TensorEncoder(), FeaturesSetConfig(shape=(320, 25088))
+    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(491, 2, 1))
+    CLASS = TensorEncoder(), FeaturesSetConfig(shape=1)
+    VIDEO_SCENE_R2PLUS1_FEATURES = TensorEncoder(), FeaturesSetConfig(shape=(73, 512))
