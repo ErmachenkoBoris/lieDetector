@@ -53,42 +53,51 @@ class MultimodalModel(BaseModel):
             return self._build_fbp_fusion_model()
 
     def _build_sum_fusion_model(self):
-        intra_modality_features = self._build_multimodal_input()
+        inputs = self._build_multimodal_input()
+        intra_modality_features = []
         for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
+                intra_modality_features.append(self.pulse_conv_net(inputs[i]))
+            else:
+                intra_modality_features.append(inputs[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = SumFusionLayer()(intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
+        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
         model.summary()
         return model, model
 
     def _build_concatenation_fusion_model(self):
-        intra_modality_features = self._build_multimodal_input()
+        inputs = self._build_multimodal_input()
+        intra_modality_features = []
         for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
+                intra_modality_features.append(self.pulse_conv_net(inputs[i]))
+            else:
+                intra_modality_features.append(inputs[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = ConcatenationFusionLayer(self._lstm_units_second_layer, len(self._modalities_list))(
             intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
+        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
         model.summary()
         return model, model
 
     def _build_fbp_fusion_model(self):
-        intra_modality_features = self._build_multimodal_input()
+        inputs = self._build_multimodal_input()
+        intra_modality_features = []
         for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
+                intra_modality_features.append(self.pulse_conv_net(inputs[i]))
+            else:
+                intra_modality_features.append(inputs[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = FactorizedPoolingFusionLayer(self._dropout, self._pooling_size)(intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
 
-        model = tf.keras.Model(inputs=intra_modality_features, outputs=output_tensor)
+        model = tf.keras.Model(inputs=inputs, outputs=output_tensor)
         model.summary()
         return model, model
 
