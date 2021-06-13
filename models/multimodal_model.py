@@ -54,9 +54,9 @@ class MultimodalModel(BaseModel):
 
     def _build_sum_fusion_model(self):
         intra_modality_features = self._build_multimodal_input()
-        for i, modality in self._modalities_list:
+        for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features = self.pulse_conv_net(intra_modality_features)
+                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = SumFusionLayer()(intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
@@ -67,9 +67,9 @@ class MultimodalModel(BaseModel):
 
     def _build_concatenation_fusion_model(self):
         intra_modality_features = self._build_multimodal_input()
-        for i, modality in self._modalities_list:
+        for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features = self.pulse_conv_net(intra_modality_features)
+                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = ConcatenationFusionLayer(self._lstm_units_second_layer, len(self._modalities_list))(
             intra_modality_outputs)
@@ -81,9 +81,9 @@ class MultimodalModel(BaseModel):
 
     def _build_fbp_fusion_model(self):
         intra_modality_features = self._build_multimodal_input()
-        for i, modality in self._modalities_list:
+        for i, modality in enumerate(self._modalities_list):
             if modality == DatasetFeaturesSet.PULSE:
-                intra_modality_features = self.pulse_conv_net(intra_modality_features)
+                intra_modality_features[i] = self.pulse_conv_net(intra_modality_features[i])
         intra_modality_outputs = self._build_LSTM_block(intra_modality_features)
         fusion_output = FactorizedPoolingFusionLayer(self._dropout, self._pooling_size)(intra_modality_outputs)
         output_tensor = self._build_classification_layer(fusion_output)
