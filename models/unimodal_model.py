@@ -1,7 +1,7 @@
 from base.base_model import BaseModel
 import tensorflow as tf
 
-from configs.dataset.modality import Modality
+from configs.dataset.modality import Modality, DatasetFeaturesSet
 
 
 class UnimodalModel(BaseModel):
@@ -42,7 +42,7 @@ class UnimodalModel(BaseModel):
 
     def _build_model(self):
         input_tensor = tf.keras.layers.Input(shape=self._input_shape)
-        if self._modality == Modality.PULSE:
+        if self._modality == DatasetFeaturesSet.PULSE:
             x = self.pulse_conv_net(input_tensor)
         else:
             x = input_tensor
