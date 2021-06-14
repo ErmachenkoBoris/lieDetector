@@ -37,7 +37,7 @@ class findFaceGetPulse(object):
         self.t0 = time.time()
         self.bpms = []
         self.bpm = 0
-        dpath = resource_path("/content/lieDetector/utils/pulse_detection/haarcascade_frontalface_alt.xml")
+        dpath = resource_path("haarcascade_frontalface_alt.xml")
         if not os.path.exists(dpath):
             print("Cascade file not present!")
         self.face_cascade = cv2.CascadeClassifier(dpath)
@@ -178,45 +178,27 @@ class findFaceGetPulse(object):
         if L > self.buffer_size:
             self.times = self.times[-self.buffer_size:]
             L = self.buffer_size
-            print('** ', self.times, -self.buffer_size)
 
         processed = np.array(self.data_buffer)
         self.samples = processed
         if L > 10:
             self.output_dim = processed.shape[0]
-            print('0 ', processed.shape[0])
 
-            print('(self.times[-1] - self.times[0]) ', (self.times[-1] - self.times[0]))
-            print('self.times', self.times)
-
-            #             self.fps = float(L) / ((self.times[-1] - self.times[0]))
             self.fps = 8.
             even_times = np.linspace(self.times[0], self.times[-1], L)
             interpolated = np.interp(even_times, self.times, processed)
-            print('1 ', interpolated)
 
             interpolated = np.hamming(L) * interpolated
             interpolated = interpolated - np.mean(interpolated)
             raw = np.fft.rfft(interpolated)
-            print('2 ', interpolated)
-            print('3 ', raw)
             phase = np.angle(raw)
             self.fft = np.abs(raw)
-            print('self.fps ', self.fps)
             self.freqs = float(self.fps) / L * np.arange(L / 2 + 1)
 
             freqs = 60. * self.freqs
             idx = np.where((freqs > 50) & (freqs < 180))
 
-            #             print('phase ',  phase)
-            print('idx ', idx)
-            #             print('raw ',  raw)
-            print('self.freqs ', self.freqs)
-            print('freqs ', freqs)
-            #             idx = idx -1)
             filter_arr = []
-
-            #             print('dd ', idx, idx[0])
             idx = idx[0]
 
             # go through each element in arr
@@ -228,8 +210,6 @@ class findFaceGetPulse(object):
                     filter_arr.append(False)
 
             idx = idx[filter_arr]
-            print('--1 ', idx)
-            print('--2 ', self.fft)
             pruned = self.fft[idx]
             phase = phase[idx]
 
