@@ -91,6 +91,6 @@ class DatasetFeaturesSet(Enum):
     AUDIO = TensorEncoder(), FeaturesSetConfig(shape=(20, 512))
     VIDEO_FACE = TensorEncoder(), FeaturesSetConfig(shape=(320, 512))
     VIDEO_SCENE = TensorEncoder(), FeaturesSetConfig(shape=(320, 25088))
-    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(491, 2, 1))
+    PULSE = TensorEncoder(), FeaturesSetConfig(shape=(476, 2, 1))
     CLASS = TensorEncoder(), FeaturesSetConfig(shape=1)
     VIDEO_SCENE_R2PLUS1_FEATURES = TensorEncoder(), FeaturesSetConfig(shape=(73, 512))
