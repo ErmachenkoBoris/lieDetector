@@ -23,6 +23,7 @@ class findFaceGetPulse(object):
                  face_detector_smoothness=10):
 
         self.frame_in = np.zeros((10, 10))
+        self.coords = np.zeros(4)
         self.frame_out = np.zeros((10, 10))
         self.fps = 0
         self.buffer_size = 250
@@ -37,10 +38,6 @@ class findFaceGetPulse(object):
         self.t0 = time.time()
         self.bpms = []
         self.bpm = 0
-        dpath = resource_path("haarcascade_frontalface_alt.xml")
-        if not os.path.exists(dpath):
-            print("Cascade file not present!")
-        self.face_cascade = cv2.CascadeClassifier(dpath)
 
         self.face_rect = [1, 1, 2, 2]
         self.last_center = np.array([0, 0])
@@ -132,12 +129,7 @@ class findFaceGetPulse(object):
             cv2.putText(self.frame_out, "Press 'Esc' to quit",
                         (10, 75), cv2.FONT_HERSHEY_PLAIN, 1.25, col)
             self.data_buffer, self.times, self.trained = [], [], False
-            detected = list(self.face_cascade.detectMultiScale(self.gray,
-                                                               scaleFactor=1.3,
-                                                               minNeighbors=4,
-                                                               minSize=(
-                                                                   50, 50),
-                                                               flags=cv2.CASCADE_SCALE_IMAGE))
+            detected = list(self.coords)
 
             if len(detected) > 0:
                 detected.sort(key=lambda a: a[-1] * a[-2])

@@ -65,6 +65,7 @@ class getPulseApp():
 
         # set current image frame to the processor's input
         self.processor.frame_in = frame
+        self.processor.coords = frame
 #         # process the image frame to perform all needed analysis
         self.processor.run('')
 #         # collect the output frame for display
